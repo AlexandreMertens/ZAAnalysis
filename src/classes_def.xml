@@ -21,13 +21,10 @@
     <field name="diLepton" transient="true"/>
     <field name="diJet" transient="true"/>
   </class>
-  <class name="std::vector<ZAAnalysis::DiLepDiJet>">
-    <field name="diLepton" transient="true"/>
-    <field name="fatJet" transient="true"/>
-  </class>
+  <class name="std::vector<ZAAnalysis::DiLepDiJet>"/>
   <class name="ZAAnalysis::DiLepFatJet">
     <field name="diLepton" transient="true"/>
-    <field name="diJet" transient="true"/>
+    <field name="fatJet" transient="true"/>
   </class>
   <class name="std::vector<ZAAnalysis::DiLepFatJet>"/>
   <class name="std::vector<uint16_t>"/>

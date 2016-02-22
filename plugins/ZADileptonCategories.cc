@@ -27,7 +27,8 @@ bool ElElCategory::event_in_category_post_analyzers(const ProducersManager& prod
 }
 
 void ElElCategory::register_cuts(CutManager& manager) {
-              
+    
+    manager.new_cut("fire_trigger_Ele17_Ele12", "HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ*");          
     manager.new_cut(baseStrCategory, baseStrCategory);
     manager.new_cut(baseStrMllCut, baseStrMllCut);
     manager.new_cut(baseStrDiLeptonIsOS, baseStrDiLeptonIsOS);
@@ -61,6 +62,9 @@ void ElElCategory::evaluate_cuts_post_analyzers(CutManager& manager, const Produ
   const ZAAnalyzer& za = analyzers.get<ZAAnalyzer>("za");
   //const HLTProducer& hlt = producers.get<HLTProducer>("hlt");
 
+  for (const std::string& path: hlt.paths) {
+    if (path.find("HLT_Ele17_Ele12_CaloIdL_TrackIdL_IsoVL_DZ_v") != std::string::npos) manager.pass_cut("fire_trigger_Ele17_Ele12");
+  }
     
   if(za.diLeptons.size() >= 1) {
     const DiLepton& m_diLepton = za.diLeptons[0];
@@ -137,7 +141,10 @@ bool MuMuCategory::event_in_category_post_analyzers(const ProducersManager& prod
 }
 
 void MuMuCategory::register_cuts(CutManager& manager) {
-  
+ 
+    manager.new_cut("fire_trigger_Mu17_Mu8", "HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v*");
+    manager.new_cut("fire_trigger_Mu17_TkMu8", "HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v*");
+    manager.new_cut("fire_trigger_IsoMu27", "HLT_IsoMu27_v*"); 
           
     manager.new_cut(baseStrCategory, baseStrCategory);
     manager.new_cut(baseStrMllCut, baseStrMllCut);
@@ -172,6 +179,13 @@ void MuMuCategory::evaluate_cuts_post_analyzers(CutManager& manager, const Produ
   
   const ZAAnalyzer& za = analyzers.get<ZAAnalyzer>("za");
   //const HLTProducer& hlt = producers.get<HLTProducer>("hlt");
+
+  for (const std::string& path: hlt.paths) 
+  {
+      if (path.find("HLT_Mu17_TrkIsoVVL_Mu8_TrkIsoVVL_DZ_v") != std::string::npos) manager.pass_cut("fire_trigger_Mu17_Mu8");
+      if (path.find("HLT_Mu17_TrkIsoVVL_TkMu8_TrkIsoVVL_DZ_v") != std::string::npos) manager.pass_cut("fire_trigger_Mu17_TkMu8");
+      if (path.find("HLT_IsoMu27_v") != std::string::npos) manager.pass_cut("fire_trigger_IsoMu27");
+  }
 
 
   if(za.diLeptons.size() >= 1) {

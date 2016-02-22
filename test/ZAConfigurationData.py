@@ -3,12 +3,19 @@ import FWCore.ParameterSet.Config as cms
 from Configuration.StandardSequences.Eras import eras
 from cp3_llbb.Framework import Framework
 
-process = Framework.create(True, eras.Run2_25ns, '74X_dataRun2_v2', cms.PSet(
-    za = cms.PSet(
+framework = Framework.Framework(True, eras.Run2_25ns, globalTag='74X_dataRun2_v2', processName= 'RECO')
+framework.addAnalyzer('za',cms.PSet(
         type = cms.string('za_analyzer'),
         prefix = cms.string('za_'),
         enable = cms.bool(True),
         parameters = cms.PSet(
+            # Producers
+            electronsProducer = cms.string('electrons'),
+            muonsProducer = cms.string('muons'),
+            jetsProducer = cms.string('jets'),
+            metProducer = cms.string('met'),
+            nohfMETProducer = cms.string('nohf_met'),
+            # Here are the default value (just to show what is configurable) 
             electronPtCut = cms.untracked.double(20),
             electronEtaCut = cms.untracked.double(2.5),
             electronVetoIDName = cms.untracked.string('cutBasedElectronID-Spring15-25ns-V1-standalone-veto'),
@@ -30,6 +37,7 @@ process = Framework.create(True, eras.Run2_25ns, '74X_dataRun2_v2', cms.PSet(
             jetCSVv2L = cms.untracked.double(0.605),
             jetCSVv2M = cms.untracked.double(0.89),
             jetCSVv2T = cms.untracked.double(0.97),
+            fatjetDRleptonCut = cms.untracked.double(0.8),
 
             hltDRCut = cms.untracked.double(0.3), # DeltaR cut for trigger matching
             hltDPtCut = cms.untracked.double(0.5), #Delta(Pt)/Pt cut for trigger matching
@@ -42,14 +50,18 @@ process = Framework.create(True, eras.Run2_25ns, '74X_dataRun2_v2', cms.PSet(
             HLTMuonEG = cms.untracked.vstring('HLT_Mu17_TrkIsoVVL_Ele12_CaloIdL_TrackIdL_IsoVL_v.*', 'HLT_Mu8_TrkIsoVVL_Ele17_CaloIdL_TrackIdL_IsoVL_v.*'),
             ),
         )
-    ), redoJEC=False,
-    process_name='RECO'
     )
 
-Framework.schedule(process, ['za']) 
+#framework.redoJEC()
+framework.doSystematics(['jec', 'jer'])
+process = framework.create()
+
+process.framework.producers.muons.parameters.applyRochester = cms.untracked.bool(True)
+
+#Framework.schedule(process, ['za']) 
 
 process.source.fileNames = cms.untracked.vstring(
         '/store/data/Run2015B/DoubleMuon/MINIAOD/05Oct2015-v1/40000/F6B9EFF5-BE6E-E511-A5DD-002618943964.root'
         )
 
-process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(1000))
+process.maxEvents = cms.untracked.PSet(input = cms.untracked.int32(5000))

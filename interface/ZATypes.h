@@ -29,10 +29,11 @@ namespace ZAAnalysis {
   struct Lepton: BaseObject {
     Lepton()
     {}
-    Lepton(myLorentzVector p4, uint16_t idx, uint16_t charge, bool isEl, bool isMu, bool isVeto = false, bool isLoose = false, bool isMedium = false, bool isTight = false, float isoValue = 0, bool isoLoose = false, bool isoTight = false):
+    Lepton(myLorentzVector p4, uint16_t idx, uint16_t charge,float dca, bool isEl, bool isMu, bool isVeto = false, bool isLoose = false, bool isMedium = false, bool isTight = false, float isoValue = 0, bool isoLoose = false, bool isoTight = false):
       BaseObject(p4), 
       idx(idx), 
       charge(charge),
+      dca(dca),
       isoValue(isoValue),
       isEl(isEl), 
       isMu(isMu),
@@ -61,6 +62,7 @@ namespace ZAAnalysis {
     
     uint16_t idx; // stores index to electron/muon arrays
     uint16_t charge;
+    float dca;
     float isoValue;
     int16_t hlt_idx = -1; // Index to the matched HLT object. -1 if no match
     bool isEl;
@@ -101,7 +103,8 @@ namespace ZAAnalysis {
     bool isLL, isMM, isTT;
     bool isIsoLL, isIsoTT;
     uint16_t idxLep1, idxLep2;
-
+    float triggerSF;
+    float triggerMatched;
   };
  
   struct Jet: BaseObject {

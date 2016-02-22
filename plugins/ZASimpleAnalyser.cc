@@ -10,6 +10,7 @@
 #include <cp3_llbb/Framework/interface/METProducer.h>
 #include <cp3_llbb/Framework/interface/HLTProducer.h>
 #include <cp3_llbb/Framework/interface/GenParticlesProducer.h>
+#include <cp3_llbb/Framework/interface/BinnedValuesJSONParser.h>
 
 #include <Math/PtEtaPhiE4D.h>
 #include <Math/LorentzVector.h>
@@ -45,15 +46,15 @@ void ZAAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
     std::cout << "Electrons" << std::endl;
   #endif
 
-  const ElectronsProducer& electrons = producers.get<ElectronsProducer>("electrons");
+  const ElectronsProducer& electrons = producers.get<ElectronsProducer>(m_electrons_producer);
 
   for(uint16_t ielectron = 0; ielectron < electrons.p4.size(); ielectron++){
-    if( electrons.p4[ielectron].Pt() > m_electronPtCut && abs(electrons.p4[ielectron].Eta()) < m_electronEtaCut ){
+    if( electrons.p4[ielectron].Pt() > m_electronPtCut && abs(electrons.p4[ielectron].Eta()) < m_electronEtaCut && fabs(electrons.dca[ielectron])<m_electronDcaCut ){
       
       Lepton m_lepton(
           electrons.p4[ielectron], 
           ielectron, 
-          electrons.charge[ielectron], 
+          electrons.charge[ielectron],electrons.dca[ielectron], 
           true, false,
           electrons.ids[ielectron][m_electronVetoIDName],
           electrons.ids[ielectron][m_electronLooseIDName],
@@ -85,15 +86,15 @@ void ZAAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
     std::cout << "Muons" << std::endl;
   #endif
 
-  const MuonsProducer& muons = producers.get<MuonsProducer>("muons");
+  const MuonsProducer& muons = producers.get<MuonsProducer>(m_muons_producer);
 
   for(uint16_t imuon = 0; imuon < muons.p4.size(); imuon++){
-    if(muons.p4[imuon].Pt() > m_muonPtCut && abs(muons.p4[imuon].Eta()) < m_muonEtaCut ){
+    if(muons.p4[imuon].Pt() > m_muonPtCut && abs(muons.p4[imuon].Eta()) < m_muonEtaCut && fabs(muons.dca[imuon])<m_muonDcaCut){
       
       Lepton m_lepton(
           muons.p4[imuon], 
           imuon,
-          muons.charge[imuon], 
+          muons.charge[imuon],muons.dca[imuon],
           false, true,
           muons.isLoose[imuon], // isVeto => for muons, re-use isLoose
           muons.isLoose[imuon],
@@ -104,7 +105,7 @@ void ZAAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
           muons.relativeIsoR04_deltaBeta[imuon] < m_muonTightIsoCut
       );
 
-      if( muons.isLoose[imuon] && muons.relativeIsoR04_withEA[imuon] < m_muonLooseIsoCut)
+      if( muons.isLoose[imuon] && muons.relativeIsoR04_deltaBeta[imuon] < m_muonLooseIsoCut)
       {
           isolatedMuons.push_back(m_lepton);
           leptons.push_back(m_lepton);
@@ -126,7 +127,7 @@ void ZAAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
     std::cout << "Jets" << std::endl;
   #endif
 
-  const JetsProducer& jets = producers.get<JetsProducer>("jets");
+  const JetsProducer& jets = producers.get<JetsProducer>(m_jets_producer);
 
   // First find the jets passing kinematic cuts and save them as Jet objects
 
@@ -260,7 +261,7 @@ void ZAAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
               m_fatjet.minDRjl = DR;
       }
 
-      if (m_fatjet.minDRjl > m_jetDRleptonCut)
+      if (m_fatjet.minDRjl > m_fatjetDRleptonCut)
       {
           selFatJets.push_back(m_fatjet);
           fatjetCounter++;
@@ -366,7 +367,7 @@ void ZAAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
   // Reconstruction of the Z candidate
   // Basic selection: Two selected leptons that matches the trigger and two jets
   
-  if (leptons.size() == 2 && leptons[0].hlt_idx > -1 && leptons[1].hlt_idx > -1){
+  if (leptons.size() == 2){
 
     const Lepton& l1 = leptons[0];
     const Lepton& l2 = leptons[1];
@@ -391,10 +392,17 @@ void ZAAnalyzer::analyze(const edm::Event& event, const edm::EventSetup& setup, 
     m_diLepton.isMuMu = dilep_ptOrdered[0].isMu && dilep_ptOrdered[1].isMu;
     m_diLepton.isOS = l1.charge != l2.charge;
     m_diLepton.isSF = m_diLepton.isElEl || m_diLepton.isMuMu;
+    m_diLepton.triggerMatched = (leptons[0].hlt_idx > -1 && leptons[1].hlt_idx > -1);
+
+    if (m_diLepton.isMuMu) {
+        //std::cout << "eta :"  << TMath::Abs(dilep_ptOrdered[0].p4.Eta()) << " " << TMath::Abs(dilep_ptOrdered[1].p4.Eta()) << std::endl;
+        //std::cout << m_hlt_scale_factors["HLTDoubleMuonSFs"].get({TMath::Abs(dilep_ptOrdered[0].p4.Eta()), TMath::Abs(dilep_ptOrdered[1].p4.Eta())})[0] << std::endl;
+        m_diLepton.triggerSF = m_hlt_scale_factors["HLTDoubleMuonSFs"].get({TMath::Abs(dilep_ptOrdered[0].p4.Eta()), TMath::Abs(dilep_ptOrdered[1].p4.Eta())})[0];
+        }
+    else  {m_diLepton.triggerSF = 1;}
+
 
     diLeptons.push_back(m_diLepton);
-
-  
 
     // Selection: Two selected leptons that matches the trigger and two jets
 
